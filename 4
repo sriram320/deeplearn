@@ -1,0 +1,55 @@
+EXP 4
+import numpy as np
+import pandas as pd
+import tensorflow as tf
+from tensorflow import keras
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import accuracy_score
+
+# Load the dataset
+url = "https://archive.ics.uci.edu/ml/machine-learning-databases/wine/wine.data"
+columns = ['Class', 'Alcohol', 'Malic Acid', 'Ash', 'Alcalinity of Ash', 'Magnesium',
+           'Total Phenols', 'Flavanoids', 'Nonflavanoid Phenols', 'Proanthocyanins',
+           'Color Intensity', 'Hue', 'OD280/OD315', 'Proline']
+
+# Read the dataset
+wine_data = pd.read_csv(url, header=None, names=columns)
+
+# Separate features and target labels
+X = wine_data.iloc[:, 1:].values  # Features
+y = wine_data.iloc[:, 0].values -1   # Labels (0,1,2 instead of 1,2,3)
+
+# Split into training and testing sets (80% train, 20% test)
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+# Standardize the feature values (normalize)
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Define the Neural Network model
+model = keras.Sequential([
+    keras.layers.Dense(16, activation='relu', input_shape=(X_train.shape[1],)),  # Hidden layer
+    keras.layers.Dense(8, activation='relu'),  # Additional hidden layer
+    keras.layers.Dense(3, activation='softmax')  # Output layer (3 classes)
+])
+
+# Compile the model
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+
+# Train the model
+model.fit(X_train, y_train, epochs=50, batch_size=5, validation_data=(X_test, y_test))
+
+# Evaluate the model
+test_loss, test_acc = model.evaluate(X_test, y_test)
+print(f"\nTest Accuracy: {test_acc:.4f}")
+
+# Make predictions
+predictions = np.argmax(model.predict(X_test), axis=1)
+
+# Calculate accuracy
+acc = accuracy_score(y_test, predictions)
+print(f"Classification Accuracy: {acc:.4f}")
